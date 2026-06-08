@@ -16,7 +16,7 @@ interface WordDetailsProps {
 }
 
 const WordDetails: React.FC<WordDetailsProps> = ({ entries, searchedWord }) => {
-  const { playbackState, errorMessage, playAudio, stopAudio } =
+  const { playbackState, errorMessage, playAudio, pauseAudio, resumeAudio, stopAudio } =
     useAudioPronunciation();
 
   const primaryEntry = entries[0];
@@ -81,9 +81,13 @@ const WordDetails: React.FC<WordDetailsProps> = ({ entries, searchedWord }) => {
 
   const displayWord = safeString(primaryEntry?.word, searchedWord);
 
-  const handlePlayAudio = async () => {
+  const handlePlayPause = async () => {
     if (playbackState === 'playing') {
-      stopAudio();
+      pauseAudio();
+      return;
+    }
+    if (playbackState === 'paused') {
+      resumeAudio();
       return;
     }
     await playAudio(audioUrl);
@@ -106,7 +110,8 @@ const WordDetails: React.FC<WordDetailsProps> = ({ entries, searchedWord }) => {
           audioUrl={audioUrl}
           playbackState={playbackState}
           errorMessage={errorMessage}
-          onPress={handlePlayAudio}
+          onPlayPause={handlePlayPause}
+          onStop={stopAudio}
         />
       )}
 

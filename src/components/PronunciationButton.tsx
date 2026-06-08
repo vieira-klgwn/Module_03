@@ -14,7 +14,8 @@ interface PronunciationButtonProps {
   audioUrl: string | null;
   playbackState: AudioPlaybackState;
   errorMessage: string | null;
-  onPress: () => void;
+  onPlayPause: () => void;
+  onStop: () => void;
 }
 
 const PronunciationButton: React.FC<PronunciationButtonProps> = ({
@@ -22,15 +23,30 @@ const PronunciationButton: React.FC<PronunciationButtonProps> = ({
   audioUrl,
   playbackState,
   errorMessage,
-  onPress,
+  onPlayPause,
+  onStop,
 }) => {
   if (!phoneticText && !audioUrl) {
     return null;
   }
 
-  const showAudioIcon = Boolean(audioUrl);
+  const showAudioControls = Boolean(audioUrl);
   const isPlaying = playbackState === 'playing';
+  const isPaused = playbackState === 'paused';
   const isLoading = playbackState === 'loading';
+  const showStopButton = isPlaying || isPaused;
+
+  const playPauseIcon = isPlaying
+    ? 'pause'
+    : isPaused
+      ? 'play'
+      : 'volume-medium-outline';
+
+  const playPauseLabel = isPlaying
+    ? 'Pause pronunciation'
+    : isPaused
+      ? 'Resume pronunciation'
+      : 'Play pronunciation';
 
   return (
     <View style={styles.container}>
@@ -40,25 +56,34 @@ const PronunciationButton: React.FC<PronunciationButtonProps> = ({
         </Text>
       ) : null}
 
-      {showAudioIcon ? (
-        <TouchableOpacity
-          onPress={onPress}
-          disabled={isLoading}
-          style={styles.audioButton}
-          accessibilityLabel="Play pronunciation"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: isLoading, busy: isLoading }}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#6C63FF" />
-          ) : (
-            <Ionicons
-              name={isPlaying ? 'volume-high' : 'volume-medium-outline'}
-              size={28}
-              color="#6C63FF"
-            />
-          )}
-        </TouchableOpacity>
+      {showAudioControls ? (
+        <View style={styles.controls}>
+          <TouchableOpacity
+            onPress={onPlayPause}
+            disabled={isLoading}
+            style={styles.audioButton}
+            accessibilityLabel={playPauseLabel}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isLoading, busy: isLoading }}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#6C63FF" />
+            ) : (
+              <Ionicons name={playPauseIcon} size={28} color="#6C63FF" />
+            )}
+          </TouchableOpacity>
+
+          {showStopButton ? (
+            <TouchableOpacity
+              onPress={onStop}
+              style={styles.audioButton}
+              accessibilityLabel="Stop pronunciation"
+              accessibilityRole="button"
+            >
+              <Ionicons name="stop" size={26} color="#6C63FF" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
       ) : null}
 
       {errorMessage ? (
@@ -82,6 +107,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#718096',
     fontStyle: 'italic',
+  },
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   audioButton: {
     padding: 8,
