@@ -1,18 +1,38 @@
 {
-  "name": "finance",
+  "name": "dictionary",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "node_modules/expo/AppEntry.js",
   "dependencies": {
+    "@expo/vector-icons": "^15.0.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-navigation/drawer": "^7.11.0",
+    "@react-navigation/native": "^7.2.5",
+    "axios": "^1.16.1",
     "expo": "~56.0.8",
+    "expo-audio": "~56.0.11",
     "expo-status-bar": "~56.0.4",
     "react": "19.2.3",
-    "react-native": "0.85.3"
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-gesture-handler": "~2.31.1",
+    "react-native-reanimated": "^4.3.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "4.25.2",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "type-check": "tsc --noEmit",
+    "test:validators": "npx tsc src/utils/validators.ts src/types/dictionary.ts --ignoreConfig --outDir /tmp/validator-test --esModuleInterop --module commonjs --target es2020 && node scripts/run-validator-tests.js"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@types/react": "^19.2.15",
+    "@types/react-native": "^0.72.8",
+    "typescript": "^6.0.3"
+  }
 }
