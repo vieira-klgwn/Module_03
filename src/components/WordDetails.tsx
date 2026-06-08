@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { DictionaryEntry } from '../types/dictionary';
 import {
-  getAudioUrl,
+  getAudioPronunciations,
   getPhoneticText,
   isValidArray,
   safeString,
@@ -16,12 +16,21 @@ interface WordDetailsProps {
 }
 
 const WordDetails: React.FC<WordDetailsProps> = ({ entries, searchedWord }) => {
-  const { playbackState, errorMessage, playAudio, pauseAudio, resumeAudio, stopAudio } =
-    useAudioPronunciation();
+  const {
+    playbackState,
+    currentUrl,
+    errorMessage,
+    playAudio,
+    pauseAudio,
+    resumeAudio,
+    stopAudio,
+  } = useAudioPronunciation();
 
   const primaryEntry = entries[0];
   const phoneticText = primaryEntry ? getPhoneticText(primaryEntry) : null;
-  const audioUrl = primaryEntry ? getAudioUrl(primaryEntry) : null;
+  const audioOptions = primaryEntry ? getAudioPronunciations(primaryEntry) : [];
+  const hasMultipleAudios = audioOptions.length > 1;
+  const singleAudio = audioOptions.length === 1 ? audioOptions[0] : null;
 
   const meaningsContent = useMemo(() => {
     if (!isValidArray(entries)) {
@@ -81,16 +90,23 @@ const WordDetails: React.FC<WordDetailsProps> = ({ entries, searchedWord }) => {
 
   const displayWord = safeString(primaryEntry?.word, searchedWord);
 
-  const handlePlayPause = async () => {
-    if (playbackState === 'playing') {
+  const handlePlayPause = async (url: string) => {
+    if (currentUrl === url && playbackState === 'playing') {
       pauseAudio();
       return;
     }
-    if (playbackState === 'paused') {
+    if (currentUrl === url && playbackState === 'paused') {
       resumeAudio();
       return;
     }
-    await playAudio(audioUrl);
+    await playAudio(url);
+  };
+
+  const getPlaybackStateForUrl = (url: string) => {
+    if (currentUrl !== url) {
+      return 'idle' as const;
+    }
+    return playbackState;
   };
 
   return (
@@ -104,15 +120,51 @@ const WordDetails: React.FC<WordDetailsProps> = ({ entries, searchedWord }) => {
         {displayWord}
       </Text>
 
-      {(phoneticText || audioUrl) && (
-        <PronunciationButton
-          phoneticText={phoneticText}
-          audioUrl={audioUrl}
-          playbackState={playbackState}
-          errorMessage={errorMessage}
-          onPlayPause={handlePlayPause}
-          onStop={stopAudio}
-        />
+      {(phoneticText || audioOptions.length > 0) && (
+        hasMultipleAudios ? (
+          <View style={styles.pronunciationSection}>
+            {phoneticText ? (
+              <Text style={styles.phoneticHeader} accessibilityLabel={`Phonetic: ${phoneticText}`}>
+                {phoneticText}
+              </Text>
+            ) : null}
+            <View style={styles.audioOptionsRow}>
+              {audioOptions.map((option) => (
+                <PronunciationButton
+                  key={option.url}
+                  phoneticText={null}
+                  audioUrl={option.url}
+                  localeIcon={option.icon}
+                  localeLabel={option.shortLabel}
+                  localeFullLabel={option.label}
+                  playbackState={getPlaybackStateForUrl(option.url)}
+                  errorMessage={errorMessage}
+                  showError={false}
+                  onPlayPause={() => handlePlayPause(option.url)}
+                  onStop={stopAudio}
+                />
+              ))}
+            </View>
+            {errorMessage ? (
+              <Text style={styles.audioErrorText} accessibilityRole="alert">
+                {errorMessage}
+              </Text>
+            ) : null}
+          </View>
+        ) : (
+          <PronunciationButton
+            phoneticText={phoneticText}
+            audioUrl={singleAudio?.url ?? null}
+            playbackState={playbackState}
+            errorMessage={errorMessage}
+            onPlayPause={() => {
+              if (singleAudio) {
+                void handlePlayPause(singleAudio.url);
+              }
+            }}
+            onStop={stopAudio}
+          />
+        )
       )}
 
       <View style={styles.meaningsContainer}>{meaningsContent}</View>
@@ -132,6 +184,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1A202C',
     marginBottom: 4,
+  },
+  pronunciationSection: {
+    marginTop: 8,
+  },
+  phoneticHeader: {
+    fontSize: 18,
+    color: '#718096',
+    fontStyle: 'italic',
+    marginBottom: 8,
+  },
+  audioOptionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  audioErrorText: {
+    fontSize: 13,
+    color: '#C53030',
+    marginTop: 8,
   },
   meaningsContainer: {
     marginTop: 20,

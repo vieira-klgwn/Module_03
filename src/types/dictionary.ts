@@ -46,3 +46,11 @@ export interface ValidationResult {
   message?: string;
   normalizedWord?: string;
 }
+
+export interface AudioPronunciationOption {
+  url: string;
+  label: string;
+  shortLabel: string;
+  icon: string;
+  phoneticText: string | null;
+}

@@ -11,6 +11,7 @@ export type AudioPlaybackState = 'idle' | 'loading' | 'playing' | 'paused' | 'er
 
 interface UseAudioPronunciationResult {
   playbackState: AudioPlaybackState;
+  currentUrl: string | null;
   errorMessage: string | null;
   playAudio: (url: string | null) => Promise<void>;
   pauseAudio: () => void;
@@ -25,6 +26,7 @@ export function useAudioPronunciation(): UseAudioPronunciationResult {
   const playerRef = useRef<AudioPlayer | null>(null);
   const currentUrlRef = useRef<string | null>(null);
   const [playbackState, setPlaybackState] = useState<AudioPlaybackState>('idle');
+  const [currentUrl, setCurrentUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const listenerRef = useRef<{ remove: () => void } | null>(null);
@@ -60,6 +62,7 @@ export function useAudioPronunciation(): UseAudioPronunciationResult {
     currentUrlRef.current = null;
 
     if (isMounted()) {
+      setCurrentUrl(null);
       setPlaybackState('idle');
     }
   }, [clearPollers, isMounted, removePlaybackListener]);
@@ -130,6 +133,7 @@ export function useAudioPronunciation(): UseAudioPronunciationResult {
     currentUrlRef.current = null;
 
     if (isMounted()) {
+      setCurrentUrl(null);
       setPlaybackState('idle');
     }
   }, [clearPollers, isMounted, removePlaybackListener]);
@@ -197,6 +201,7 @@ export function useAudioPronunciation(): UseAudioPronunciationResult {
 
       if (isMounted()) {
         setErrorMessage(null);
+        setCurrentUrl(url);
         setPlaybackState('loading');
       }
 
@@ -212,6 +217,7 @@ export function useAudioPronunciation(): UseAudioPronunciationResult {
         player.play();
 
         if (isMounted()) {
+          setCurrentUrl(url);
           setPlaybackState('playing');
         }
 
@@ -246,6 +252,7 @@ export function useAudioPronunciation(): UseAudioPronunciationResult {
 
   return {
     playbackState,
+    currentUrl,
     errorMessage,
     playAudio,
     pauseAudio,

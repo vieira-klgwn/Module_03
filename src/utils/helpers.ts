@@ -1,4 +1,10 @@
-import { DictionaryEntry, Phonetic } from '../types/dictionary';
+import { AudioPronunciationOption, DictionaryEntry, Phonetic } from '../types/dictionary';
+
+const LOCALE_INFO: Record<string, { label: string; shortLabel: string; icon: string }> = {
+  uk: { label: 'British', shortLabel: 'UK', icon: '🇬🇧' },
+  us: { label: 'American', shortLabel: 'US', icon: '🇺🇸' },
+  au: { label: 'Australian', shortLabel: 'AU', icon: '🇦🇺' },
+};
 
 export function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
@@ -48,21 +54,53 @@ export function getPhoneticText(entry: DictionaryEntry): string | null {
   return null;
 }
 
-export function getAudioUrl(entry: DictionaryEntry): string | null {
+function parseLocaleFromAudioUrl(url: string): string | null {
+  const match = url.match(/-([a-z]{2})\.mp3(?:\?|$)/i);
+  return match ? match[1].toLowerCase() : null;
+}
+
+function isValidAudioUrl(url: string): boolean {
+  return url.startsWith('http://') || url.startsWith('https://');
+}
+
+export function getAudioPronunciations(entry: DictionaryEntry): AudioPronunciationOption[] {
   if (!isValidArray(entry.phonetics)) {
-    return null;
+    return [];
   }
+
+  const seen = new Set<string>();
+  const options: AudioPronunciationOption[] = [];
 
   for (const phonetic of entry.phonetics) {
-    if (isNonEmptyString(phonetic.audio)) {
-      const url = phonetic.audio.trim();
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        return url;
-      }
+    if (!isNonEmptyString(phonetic.audio)) {
+      continue;
     }
+
+    const url = phonetic.audio.trim();
+    if (!isValidAudioUrl(url) || seen.has(url)) {
+      continue;
+    }
+
+    seen.add(url);
+
+    const locale = parseLocaleFromAudioUrl(url);
+    const localeInfo = locale ? LOCALE_INFO[locale] : null;
+
+    options.push({
+      url,
+      label: localeInfo?.label ?? 'Pronunciation',
+      shortLabel: localeInfo?.shortLabel ?? '●',
+      icon: localeInfo?.icon ?? '🔊',
+      phoneticText: isNonEmptyString(phonetic.text) ? phonetic.text : null,
+    });
   }
 
-  return null;
+  return options;
+}
+
+export function getAudioUrl(entry: DictionaryEntry): string | null {
+  const pronunciations = getAudioPronunciations(entry);
+  return pronunciations.length > 0 ? pronunciations[0].url : null;
 }
 
 export function getAllPhonetics(entry: DictionaryEntry): Phonetic[] {

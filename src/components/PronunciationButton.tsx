@@ -16,6 +16,10 @@ interface PronunciationButtonProps {
   errorMessage: string | null;
   onPlayPause: () => void;
   onStop: () => void;
+  localeIcon?: string;
+  localeLabel?: string;
+  localeFullLabel?: string;
+  showError?: boolean;
 }
 
 const PronunciationButton: React.FC<PronunciationButtonProps> = ({
@@ -25,6 +29,10 @@ const PronunciationButton: React.FC<PronunciationButtonProps> = ({
   errorMessage,
   onPlayPause,
   onStop,
+  localeIcon,
+  localeLabel,
+  localeFullLabel,
+  showError = true,
 }) => {
   if (!phoneticText && !audioUrl) {
     return null;
@@ -42,14 +50,15 @@ const PronunciationButton: React.FC<PronunciationButtonProps> = ({
       ? 'play'
       : 'volume-medium-outline';
 
+  const localeName = localeFullLabel ?? localeLabel;
   const playPauseLabel = isPlaying
-    ? 'Pause pronunciation'
+    ? `Pause ${localeName ? `${localeName} ` : ''}pronunciation`
     : isPaused
-      ? 'Resume pronunciation'
-      : 'Play pronunciation';
+      ? `Resume ${localeName ? `${localeName} ` : ''}pronunciation`
+      : `Play ${localeName ? `${localeName} ` : ''}pronunciation`;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, localeLabel ? styles.localeContainer : null]}>
       {phoneticText ? (
         <Text style={styles.phonetic} accessibilityLabel={`Phonetic: ${phoneticText}`}>
           {phoneticText}
@@ -58,6 +67,18 @@ const PronunciationButton: React.FC<PronunciationButtonProps> = ({
 
       {showAudioControls ? (
         <View style={styles.controls}>
+          {localeLabel ? (
+            <View
+              style={styles.localeBadge}
+              accessibilityLabel={`${localeFullLabel ?? localeLabel} pronunciation`}
+            >
+              {localeIcon ? (
+                <Text style={styles.localeIcon}>{localeIcon}</Text>
+              ) : null}
+              <Text style={styles.localeText}>{localeLabel}</Text>
+            </View>
+          ) : null}
+
           <TouchableOpacity
             onPress={onPlayPause}
             disabled={isLoading}
@@ -86,7 +107,7 @@ const PronunciationButton: React.FC<PronunciationButtonProps> = ({
         </View>
       ) : null}
 
-      {errorMessage ? (
+      {showError && errorMessage ? (
         <Text style={styles.errorText} accessibilityRole="alert">
           {errorMessage}
         </Text>
@@ -102,6 +123,26 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     marginTop: 8,
     gap: 8,
+  },
+  localeContainer: {
+    marginTop: 0,
+  },
+  localeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EDF2F7',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    gap: 4,
+  },
+  localeIcon: {
+    fontSize: 16,
+  },
+  localeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4A5568',
   },
   phonetic: {
     fontSize: 18,
